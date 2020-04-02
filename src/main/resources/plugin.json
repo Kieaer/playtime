@@ -1,0 +1,7 @@
+{
+  "name": "playtime",
+  "author": "Kieaer",
+  "main": "playtime.Main",
+  "description": "Counting player playtime",
+  "version": "1.0"
+}
