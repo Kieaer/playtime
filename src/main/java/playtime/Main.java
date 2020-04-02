@@ -23,7 +23,7 @@ public class Main extends Plugin {
     @Override
     public void init() {
         try {
-            conn = DriverManager.getConnection("config/plugins/playtime/data/player.sqlite3");
+            conn = DriverManager.getConnection("config/mdos/playtime/data/player.sqlite3");
             PreparedStatement ps = conn.prepareStatement("CREATE TABLE IF NOT EXISTS `playtime` (uuid TEXT, time TEXT)");
             ps.execute();
             ps.close();
