@@ -19,10 +19,10 @@ import static mindustry.Vars.playerGroup;
 
 public class Main extends Plugin {
     Connection conn;
-
     @Override
     public void init() {
         try {
+            Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("config/mdos/playtime/data/player.sqlite3");
             PreparedStatement ps = conn.prepareStatement("CREATE TABLE IF NOT EXISTS `playtime` (uuid TEXT, time TEXT)");
             ps.execute();
