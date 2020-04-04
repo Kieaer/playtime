@@ -4,8 +4,9 @@ import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
 import arc.func.Cons;
+import arc.math.geom.Path;
 import arc.util.CommandHandler;
-import jdk.internal.jline.internal.Log;
+import arc.util.Log;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.plugin.Plugin;
@@ -23,7 +24,8 @@ public class Main extends Plugin {
     public void init() {
         try {
             Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection("config/mdos/playtime/data/player.sqlite3");
+            Core.settings.getDataDirectory().child("mods/playtime/data").mkdirs();
+            conn = DriverManager.getConnection("jdbc:sqlite:./config/mods/playtime/data/player.sqlite3");
             PreparedStatement ps = conn.prepareStatement("CREATE TABLE IF NOT EXISTS `playtime` (uuid TEXT, time TEXT)");
             ps.execute();
             ps.close();
@@ -101,7 +103,7 @@ public class Main extends Plugin {
                 pstmt.setString(1, uuid);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    Log.info(player != null ? player.name : arg[0] + "Player playtime is " + LocalTime.parse(rs.getString("time"), DateTimeFormatter.ofPattern("HH:mm.ss")));
+                    Log.info(player != null ? player.name + "Player playtime is " + LocalTime.parse(rs.getString("time"), DateTimeFormatter.ofPattern("HH:mm:ss")) : arg[0] + " Player playtime is " + LocalTime.parse(rs.getString("time"), DateTimeFormatter.ofPattern("HH:mm:ss")));
                 } else {
                     Log.warn("Player/uuid not found!");
                 }

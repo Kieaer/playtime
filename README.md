@@ -1,6 +1,5 @@
 # Playtime
-_**100% NOT TESTED!**_
-I thought, "This will work."
+Plugin request by Micro-chan
 
 ## How to use
 Use ``playtime <player/uuid>`` command in Console.
