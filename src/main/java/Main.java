@@ -1,25 +1,21 @@
 import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
-import arc.func.Cons;
-import arc.math.geom.Path;
 import arc.util.CommandHandler;
 import arc.util.Log;
-import mindustry.entities.type.Player;
 import mindustry.game.EventType;
-import mindustry.plugin.Plugin;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
+import mindustry.mod.Plugin;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
-import static mindustry.Vars.player;
-import static mindustry.Vars.playerGroup;
 
 public class Main extends Plugin {
     Connection conn;
+    int tick = 0;
+
     @Override
     public void init() {
         try {
@@ -30,29 +26,24 @@ public class Main extends Plugin {
                 ps.execute();
             }
 
-            Events.on(EventType.Trigger.update, new Runnable() {
-                int tick = 0;
-
-                @Override
-                public void run() {
-                    if (tick != 60) {
-                        tick++;
-                    } else {
-                        for (Player p : playerGroup.all()) {
-                            try (PreparedStatement pstmt = conn.prepareStatement("SELECT time FROM playtime WHERE uuid=?")){
-                                pstmt.setString(1, p.uuid);
-                                try(ResultSet rs = pstmt.executeQuery()) {
-                                    if (rs.next()) {
-                                        try(PreparedStatement pstm = conn.prepareStatement("UPDATE playtime SET time=? WHERE uuid=?")) {
-                                            pstm.setLong(1, longToDateTime(rs.getLong("time")).plusSeconds(1).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
-                                            pstm.setString(2, p.uuid);
-                                            pstm.execute();
-                                        }
+            Events.on(EventType.Trigger.update.getClass(), e -> {
+                if (tick != 60) {
+                    tick++;
+                } else {
+                    for (Playerc p : Groups.player) {
+                        try (PreparedStatement pstmt = conn.prepareStatement("SELECT time FROM playtime WHERE uuid=?")){
+                            pstmt.setString(1, p.uuid());
+                            try(ResultSet rs = pstmt.executeQuery()) {
+                                if (rs.next()) {
+                                    try(PreparedStatement pstm = conn.prepareStatement("UPDATE playtime SET time=? WHERE uuid=?")) {
+                                        pstm.setLong(1, longToDateTime(rs.getLong("time")).plusSeconds(1).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+                                        pstm.setString(2, p.uuid());
+                                        pstm.execute();
                                     }
                                 }
-                            } catch (Exception e){
-                                e.printStackTrace();
                             }
+                        } catch (Exception ex){
+                            ex.printStackTrace();
                         }
                     }
                 }
@@ -60,11 +51,11 @@ public class Main extends Plugin {
 
             Events.on(EventType.PlayerJoin.class, e -> {
                 try (PreparedStatement pstmt = conn.prepareStatement("SELECT * from playtime WHERE uuid=?")){
-                    pstmt.setString(1, e.player.uuid);
+                    pstmt.setString(1, e.player.uuid());
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (!rs.next()) {
                             try (PreparedStatement create = conn.prepareStatement("INSERT INTO playtime VALUES(?, ?)")) {
-                                create.setString(1, e.player.uuid);
+                                create.setString(1, e.player.uuid());
                                 create.setLong(2, 0L);
                                 create.execute();
                             }
@@ -93,13 +84,13 @@ public class Main extends Plugin {
     @Override
     public void registerServerCommands(CommandHandler handler) {
         handler.register("playtime", "<player/uuid>", "Check player playtime", (arg) -> {
-            Player player = playerGroup.find(p -> p.name.equals(arg[0]));
-            String uuid = player != null ? player.uuid : arg[0];
+            Playerc player = Groups.player.find(p -> p.name.equals(arg[0]));
+            String uuid = player != null ? player.uuid() : arg[0];
             try (PreparedStatement pstmt = conn.prepareStatement("SELECT time from playtime WHERE uuid=?")) {
                 pstmt.setString(1, uuid);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
-                        Log.info(player != null ? player.name + longToTime(rs.getLong("time")) : arg[0] + longToTime(rs.getLong("time")));
+                        Log.info(player != null ? player.name() + longToTime(rs.getLong("time")) : arg[0] + longToTime(rs.getLong("time")));
                     } else {
                         Log.warn("Player/uuid not found!");
                     }
@@ -112,12 +103,12 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.<Player>register("playtime", "Check server playtime", (arg, player) -> {
+        handler.<Playerc>register("playtime", "Check server playtime", (arg, player) -> {
             try (PreparedStatement pstmt = conn.prepareStatement("SELECT time from playtime WHERE uuid=?")) {
-                pstmt.setString(1, player.uuid);
+                pstmt.setString(1, player.uuid());
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
-                        player.sendMessage(player.name + "Player playtime is " + longToTime(rs.getLong("time")));
+                        player.sendMessage(player.name() + "Player playtime is " + longToTime(rs.getLong("time")));
                     }
                 }
             } catch (SQLException e) {
